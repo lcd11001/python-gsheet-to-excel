@@ -8,7 +8,7 @@ from googleapiclient.discovery import build
 import pandas as pd
 import pickle
 import openpyxl
-from openpyxl.styles import PatternFill
+from openpyxl.styles import PatternFill, Border, Side
 from datetime import datetime
 
 #define a constant string
@@ -296,7 +296,8 @@ def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
     max_row = ws.max_row + 1
     group_by_col_index = excel_col_to_index(group_by_col) + 1
 
-    fill_colors = ['CCFFFF', 'FFFFFF']  # Light blue and white
+    fill_colors = ['DDFFFF', 'FFFFFF']  # Light blue and white
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
 
     row = 2
     while row < max_row:
@@ -314,6 +315,7 @@ def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
         for r in range(merge_start, merge_end + 1):
             for c in range(1, ws.max_column + 1):
                 ws.cell(row=r, column=c).fill = fill
+                ws.cell(row=r, column=c).border = thin_border
 
         if merge_start < merge_end:
             # Merge cells in column if they have the same value
