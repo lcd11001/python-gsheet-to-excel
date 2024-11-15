@@ -3,3 +3,4 @@ input.gsheet
 output.xlsx
 ~$output.xlsx
 token.pickle
+log.txt
