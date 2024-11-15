@@ -7,6 +7,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import pandas as pd
 import pickle
+import openpyxl
 
 #define a constant string
 YES = 'Có'
@@ -197,6 +198,36 @@ def get_credentials():
     
     return creds
 
+
+def merge_cells_if_same(sheet, start_row, end_row, col):
+    """
+    Merge cells in the specified column if they have the same value.
+    """
+    merge_start = start_row
+    for row in range(start_row, end_row + 1):
+        if row == end_row or sheet.cell(row=row, column=col).value != sheet.cell(row=row + 1, column=col).value:
+            if merge_start != row:
+                sheet.merge_cells(start_row=merge_start, start_column=col, end_row=row, end_column=col)
+            merge_start = row + 1
+
+
+def post_process_and_save_to_excel(output_path, col_names):
+    """
+    Process Excel file and merging cells with the same value.
+    """
+    # Load the workbook and the first sheet
+    wb = openpyxl.load_workbook(output_path)
+    ws = wb.active
+
+    # Merge cells in 1st column if they have the same value
+    for col_name in col_names:
+        col_index = excel_col_to_index(col_name) + 1
+        merge_cells_if_same(ws, 2, ws.max_row, col_index)
+
+    # Save the workbook
+    wb.save(output_path)
+
+
 def gsheet_to_xlsx(gsheet_path, output_path, column_mapping):
     """
     Convert a .gsheet file to .xlsx format, handling column mismatches
@@ -280,6 +311,8 @@ def gsheet_to_xlsx(gsheet_path, output_path, column_mapping):
             # Make sure we close the writer even if an error occurs
             if writer:
                 writer.close()
+
+        post_process_and_save_to_excel(output_path, ['A'])
                 
     except Exception as e:
         print(f"* An error occurred: {str(e)}")
