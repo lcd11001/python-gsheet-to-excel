@@ -7,6 +7,10 @@ from googleapiclient.discovery import build
 import pandas as pd
 import pickle
 
+#define a constant string
+YES = 'Có'
+NO = 'Không'
+
 def excel_col_to_index(col_str):
     """
     Convert Excel column letters to 0-based column index.
@@ -60,9 +64,27 @@ def process_sheet_data(values, column_mapping):
 
             # Create DataFrame for the row
             row_data = [common_info + owner_info]
-            row_columns = column_mapping['dest_common_info_names'] + column_mapping['dest_owner_info_names']
+            row_columns = column_mapping['dest_common_info_names'] + column_mapping['dest_member_info_names']
             row_df = pd.DataFrame(row_data, columns=row_columns)
             split_dfs.append(row_df)
+
+            # Extract member info using the correct column indices
+            hasMember = row[excel_col_to_index(column_mapping['src_owner_info_next_id'])] == YES
+            if hasMember:
+                member_mapping = {
+                    'src_member_info_next_id': column_mapping['src_member_info_next_id'],
+                    'src_member_info_names': column_mapping['src_member_info_names'],
+                    'src_member_info_id': column_mapping['src_member_info_id'],
+                    'dest_member_info_ids': column_mapping['dest_member_info_ids'],
+                    'dest_member_info_names': column_mapping['dest_member_info_names']
+                }
+                members_info = process_member_data(row, member_mapping)
+
+                for member_info in members_info:
+                    row_member_data = [common_info + member_info]
+                    row_member_columns = column_mapping['dest_common_info_names'] + column_mapping['dest_member_info_names']
+                    row_member_df = pd.DataFrame(row_member_data, columns=row_member_columns)
+                    split_dfs.append(row_member_df)
             
         except Exception as e:
             print(f"* Error processing row {idx}: {str(e)}")
@@ -72,6 +94,44 @@ def process_sheet_data(values, column_mapping):
         return None
 
     return pd.concat(split_dfs, ignore_index=True)
+
+def process_member_data(row, member_mapping):
+    """
+    Process member data into a list of rows for the member DataFrame
+    """
+    member_info = []
+    member_info_next_id = member_mapping['src_member_info_next_id']
+    member_info_names = member_mapping['src_member_info_names']
+    member_info_ids = member_mapping['src_member_info_id']
+    member_info_next_col = excel_col_to_index(member_info_next_id)
+    member_info_columns = member_mapping['dest_member_info_names']
+    
+    col_offset = 0
+
+    while True:
+        member_data = []
+        
+        # Extract member info using the correct column indices
+        for col in member_info_ids:
+            col_idx = excel_col_to_index(col) + col_offset
+            member_data.append(row[col_idx] if col_idx < len(row) else '')
+        # swap the last two elements
+        # because the last element is the phone number
+        member_data[-1], member_data[-2] = member_data[-2], member_data[-1]
+        
+        # Append the member info to the list
+        member_info.append(member_data)
+        
+        # Check if there are more members
+        if member_info_next_col >= len(row) or row[member_info_next_col] == NO:
+            break
+
+        # Move to the next member
+        col_offset  += len(member_info_ids) + 1
+        member_info_next_col += col_offset
+
+    return member_info
+
 
 def get_credentials():
     """
@@ -196,12 +256,16 @@ if __name__ == "__main__":
         'src_owner_info_names': ['Full Name', 'Sex', 'Birthday', 'Phone'],
         
         'src_owner_info_next_id': 'J',
+
+        'src_member_info_id': ['K', 'L', 'M', 'N', 'O'],
+        'src_member_info_names': ['Full Name', 'Sex', 'Birthday', 'Relationship', 'Phone'],
+        'src_member_info_next_id': 'P',
         
         'dest_common_info_ids': ['A', 'B', 'C', 'D', 'E'],
         'dest_common_info_names': ['Counting', 'Block', 'Floor', 'HomeID', 'Owner'],
         
-        'dest_owner_info_ids': ['F', 'G', 'H', 'I', 'K'],
-        'dest_owner_info_names': ['Full Name', 'Sex', 'Birthday', 'Phone', 'Relationship'],
+        'dest_member_info_ids': ['F', 'G', 'H', 'I', 'K'],
+        'dest_member_info_names': ['Full Name', 'Sex', 'Birthday', 'Phone', 'Relationship'],
     }
 
     gsheet_to_xlsx("input.gsheet", "output.xlsx", column_mapping)
