@@ -123,12 +123,11 @@ def process_member_data(row, member_mapping):
         member_info.append(member_data)
         
         # Check if there are more members
-        if member_info_next_col >= len(row) or row[member_info_next_col] == NO:
+        if (member_info_next_col + col_offset) >= len(row) or row[member_info_next_col + col_offset] == NO:
             break
 
         # Move to the next member
         col_offset  += len(member_info_ids) + 1
-        member_info_next_col += col_offset
 
     return member_info
 
@@ -262,10 +261,10 @@ if __name__ == "__main__":
         'src_member_info_next_id': 'P',
         
         'dest_common_info_ids': ['A', 'B', 'C', 'D', 'E'],
-        'dest_common_info_names': ['Counting', 'Block', 'Floor', 'HomeID', 'Owner'],
+        'dest_common_info_names': ['STT', 'BLOCK', 'FLOOR', 'MÃ CĂN HỘ', 'CHÍNH CHỦ/THUÊ'],
         
         'dest_member_info_ids': ['F', 'G', 'H', 'I', 'K'],
-        'dest_member_info_names': ['Full Name', 'Sex', 'Birthday', 'Phone', 'Relationship'],
+        'dest_member_info_names': ['HỌ VÀ TÊN', 'GIỚI TÍNH', 'NGÀY/THÁNG/NĂM SINH', 'SĐT', 'QH VỚI CHỦ HỘ/NGƯỜI THUÊ'],
     }
 
     gsheet_to_xlsx("input.gsheet", "output.xlsx", column_mapping)
