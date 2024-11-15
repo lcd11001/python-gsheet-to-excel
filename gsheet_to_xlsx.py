@@ -80,7 +80,7 @@ def process_sheet_data(values, column_mapping):
     split_dfs = []
     additional_info_data = [''] * len(column_mapping['dest_additional_info_ids'])
 
-    for idx, row in enumerate(padded_values, start=1):
+    for idx, row in enumerate(padded_values, start=0):
         try:
             # Extract common info using the correct column indices
             common_info = []
@@ -96,7 +96,7 @@ def process_sheet_data(values, column_mapping):
             common_info.pop(3)
             
             # Replace the first element with the row index
-            common_info[0] = idx
+            common_info[0] = idx + 1
             
             # Extract owner info using the correct column indices
             owner_info = []
@@ -105,6 +105,9 @@ def process_sheet_data(values, column_mapping):
                 owner_info.append(row[col_idx] if col_idx < len(row) else '')
             # Append the last element with 'Owner'
             owner_info.append('Owner')
+
+            # G-Row ID
+            additional_info_data[-1] = row[-1] + 1
 
             # Create DataFrame for the row
             row_data = [common_info + owner_info + additional_info_data]
@@ -372,8 +375,8 @@ if __name__ == "__main__":
         'dest_member_info_ids': ['E', 'F', 'G', 'H', 'I'],
         'dest_member_info_names': ['HỌ VÀ TÊN', 'GIỚI TÍNH', 'NGÀY/THÁNG/NĂM SINH', 'SĐT', 'QH VỚI CHỦ HỘ/NGƯỜI THUÊ'],
 
-        'dest_additional_info_ids': ['J', 'K'],
-        'dest_additional_info_names': ['THÔNG TIN CHỦ CŨ', 'THÔNG TIN CHỦ HỘ'],
+        'dest_additional_info_ids': ['J', 'K', 'L'],
+        'dest_additional_info_names': ['THÔNG TIN CHỦ CŨ', 'THÔNG TIN CHỦ HỘ', 'G-Row ID'],
 
         # 'dest_merge_cells_ids': ['A', 'B', 'C'],
         # 'dest_merge_cells_names': ['STT', 'BLOCK', 'MÃ CĂN HỘ'],
