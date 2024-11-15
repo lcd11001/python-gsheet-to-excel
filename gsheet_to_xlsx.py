@@ -44,6 +44,8 @@ def process_sheet_data(values, column_mapping):
         padded_values.append(padded_row)
 
     split_dfs = []
+    additional_info_data = [''] * len(column_mapping['dest_additional_info_ids'])
+
     for idx, row in enumerate(padded_values, start=1):
         try:
             # Extract common info using the correct column indices
@@ -71,8 +73,8 @@ def process_sheet_data(values, column_mapping):
             owner_info.append('Owner')
 
             # Create DataFrame for the row
-            row_data = [common_info + owner_info]
-            row_columns = column_mapping['dest_common_info_names'] + column_mapping['dest_member_info_names']
+            row_data = [common_info + owner_info + additional_info_data]
+            row_columns = column_mapping['dest_common_info_names'] + column_mapping['dest_member_info_names'] + column_mapping['dest_additional_info_names']
             row_df = pd.DataFrame(row_data, columns=row_columns)
             split_dfs.append(row_df)
 
@@ -89,8 +91,8 @@ def process_sheet_data(values, column_mapping):
                 members_info = process_member_data(row, member_mapping)
 
                 for member_info in members_info:
-                    row_member_data = [common_info + member_info]
-                    row_member_columns = column_mapping['dest_common_info_names'] + column_mapping['dest_member_info_names']
+                    row_member_data = [common_info + member_info + additional_info_data]
+                    row_member_columns = column_mapping['dest_common_info_names'] + column_mapping['dest_member_info_names'] + column_mapping['dest_additional_info_names']
                     row_member_df = pd.DataFrame(row_member_data, columns=row_member_columns)
                     split_dfs.append(row_member_df)
             
@@ -303,6 +305,9 @@ if __name__ == "__main__":
         
         'dest_member_info_ids': ['E', 'F', 'G', 'H', 'I'],
         'dest_member_info_names': ['HỌ VÀ TÊN', 'GIỚI TÍNH', 'NGÀY/THÁNG/NĂM SINH', 'SĐT', 'QH VỚI CHỦ HỘ/NGƯỜI THUÊ'],
+
+        'dest_additional_info_ids': ['J', 'K'],
+        'dest_additional_info_names': ['THÔNG TIN CHỦ CŨ', 'THÔNG TIN CHỦ HỘ']
     }
 
     gsheet_to_xlsx("input.gsheet", "output.xlsx", column_mapping)
