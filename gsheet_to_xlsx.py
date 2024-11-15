@@ -32,7 +32,7 @@ def string_to_timestamp(date_string, format='%m/%d/%Y %H:%M:%S'):
     return date.timestamp()
 
 
-def normalize_full_name(text):
+def normalize_capitalize(text):
     """
     Capitalize the first letter of a string.
     """
@@ -137,12 +137,11 @@ def process_sheet_data(values, column_mapping):
                 col_idx = excel_col_to_index(col)
                 owner_info.append(row[col_idx] if col_idx < len(row) else '')
             # Append the last element with 'Owner'
-            owner_info.append(OWNER)
+            owner_info.append(normalize_capitalize(OWNER))
             # capitalize the first letter of the full name
-            owner_info[0] = normalize_full_name(owner_info[0])
+            owner_info[0] = normalize_capitalize(owner_info[0])
             # normalize the date format
             owner_info[2] = normalize_date(owner_info[2])
-            
 
             # G-Row ID
             additional_info_data[-1] = row[-1] + 1
@@ -234,10 +233,12 @@ def process_member_data(row, member_mapping):
         # because the last element is the phone number
         member_data[-1], member_data[-2] = member_data[-2], member_data[-1]
         # capitalize the first letter of the full name
-        member_data[0] = normalize_full_name(member_data[0])
+        member_data[0] = normalize_capitalize(member_data[0])
         # normalize the date format
         member_data[2] = normalize_date(member_data[2])
-        
+        # normalize the relationship
+        member_data[4] = normalize_capitalize(member_data[4])
+
         # Append the member info to the list
         member_info.append(member_data)
         
