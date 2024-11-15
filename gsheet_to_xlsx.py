@@ -293,12 +293,13 @@ def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
     wb = openpyxl.load_workbook(output_path)
     ws = wb.active
 
-    max_row = ws.max_row
+    max_row = ws.max_row + 1
     group_by_col_index = excel_col_to_index(group_by_col) + 1
 
     fill_colors = ['CCFFFF', 'FFFFFF']  # Light blue and white
 
-    for row in range(2, max_row + 1):
+    row = 2
+    while row < max_row:
         group_by_value = ws.cell(row=row, column=group_by_col_index).value
 
         merge_start = row
@@ -307,7 +308,7 @@ def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
         merge_end = row - 1
 
         # Apply fill color to the group
-        stt_value = ws.cell(row=row, column=1).value
+        stt_value = ws.cell(row=merge_start, column=1).value
         color_index = int(stt_value) % len(fill_colors)
         fill = PatternFill(start_color=fill_colors[color_index], end_color=fill_colors[color_index], fill_type="solid")
         for r in range(merge_start, merge_end + 1):
@@ -316,6 +317,7 @@ def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
 
         if merge_start < merge_end:
             # Merge cells in column if they have the same value
+            # print(f"* Merging cells for group '{group_by_value}' from rows {merge_start} to {merge_end}")
             for col_name in merge_col_names:
                 col_index = excel_col_to_index(col_name) + 1
                 merge_cells_if_same(ws, merge_start, merge_end, col_index)
