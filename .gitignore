@@ -1,6 +1,5 @@
-credentials.json
-input.gsheet
-output.xlsx
-~$output.xlsx
-token.pickle
-log.txt
+*.json
+*.xlsx
+*.pickle
+*.txt
+*.gsheet

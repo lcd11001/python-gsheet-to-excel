@@ -1,6 +1,7 @@
 import re
 import json
 import os
+import sys
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -10,6 +11,9 @@ import pickle
 import openpyxl
 from openpyxl.styles import PatternFill, Border, Side
 from datetime import datetime
+
+# Ensure UTF-8 encoding for console output
+sys.stdout.reconfigure(encoding='utf-8')
 
 #define a constant string
 YES = 'Có'
@@ -471,5 +475,5 @@ if __name__ == "__main__":
         'dest_group_by_name': 'MÃ CĂN HỘ'
     }
 
-    gsheet_to_xlsx("input.gsheet", "output.xlsx", column_mapping)
+    gsheet_to_xlsx("Khảo sát nhân khẩu KP 23 (Responses) (2).gsheet", "output.xlsx", column_mapping)
 
