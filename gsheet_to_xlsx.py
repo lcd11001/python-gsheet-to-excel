@@ -1,3 +1,4 @@
+import re
 import json
 import os
 from google.oauth2.credentials import Credentials
@@ -50,6 +51,13 @@ def process_sheet_data(values, column_mapping):
             for col in column_mapping['src_common_info_id']:
                 col_idx = excel_col_to_index(col)
                 common_info.append(row[col_idx] if col_idx < len(row) else '')
+
+            # Merge floor and homeID into a single column
+            block = common_info[1]
+            floor = common_info[2]
+            homeID = common_info[3]
+            common_info[2] = createHommID(block, floor, homeID)
+            common_info.pop(3)
             
             # Replace the first element with the row index
             common_info[0] = idx
@@ -94,6 +102,36 @@ def process_sheet_data(values, column_mapping):
         return None
 
     return pd.concat(split_dfs, ignore_index=True)
+
+
+def regex_extract_number(text):
+    """
+    Extract the number from a string using regex and pad it with leading zeros to length 2.
+    """
+    match = re.search(r'\d+', text)
+    if match:
+        number = match.group(0)
+        return number.zfill(2)  # Pad the number with leading zeros to ensure length is 2
+    return '00'  # Return '00' if no number is found
+
+
+def createHommID(block, floor, homeID):
+    """
+    Create a HomeID from the block, floor, and homeID
+    block = C1
+    floor = Tầng 12
+    homeID = Căn hộ 07
+    HomeID = C1-1207
+    """
+
+    # return f'{block}-{floor}-{homeID}'
+
+    # floorNumber = floor.split(' ')[1]
+    # homeNumber = homeID.split(' ')[2]
+    # return f'{block}-{floorNumber}{homeNumber}'
+
+    return f'{block}-{regex_extract_number(floor)}{regex_extract_number(homeID)}'
+
 
 def process_member_data(row, member_mapping):
     """
@@ -260,10 +298,10 @@ if __name__ == "__main__":
         'src_member_info_names': ['Full Name', 'Sex', 'Birthday', 'Relationship', 'Phone'],
         'src_member_info_next_id': 'P',
         
-        'dest_common_info_ids': ['A', 'B', 'C', 'D', 'E'],
-        'dest_common_info_names': ['STT', 'BLOCK', 'FLOOR', 'MÃ CĂN HỘ', 'CHÍNH CHỦ/THUÊ'],
+        'dest_common_info_ids': ['A', 'B', 'C', 'D'],
+        'dest_common_info_names': ['STT', 'BLOCK', 'MÃ CĂN HỘ', 'CHÍNH CHỦ/THUÊ'],
         
-        'dest_member_info_ids': ['F', 'G', 'H', 'I', 'K'],
+        'dest_member_info_ids': ['E', 'F', 'G', 'H', 'I'],
         'dest_member_info_names': ['HỌ VÀ TÊN', 'GIỚI TÍNH', 'NGÀY/THÁNG/NĂM SINH', 'SĐT', 'QH VỚI CHỦ HỘ/NGƯỜI THUÊ'],
     }
 
