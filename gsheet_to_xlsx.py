@@ -8,10 +8,23 @@ from googleapiclient.discovery import build
 import pandas as pd
 import pickle
 import openpyxl
+from datetime import datetime
 
 #define a constant string
 YES = 'Có'
 NO = 'Không'
+
+def string_to_timestamp(date_string, format='%Y-%m-%d %H:%M:%S'):
+    """
+    Convert a string to a timestamp.
+    
+    :param date_string: The date string to convert.
+    :param format: The format of the date string.
+    :return: A datetime object representing the timestamp.
+    """
+    date = datetime.strptime(date_string, format)
+    return date.timestamp()
+
 
 def excel_col_to_index(col_str):
     """
@@ -51,8 +64,7 @@ def process_sheet_data(values, column_mapping):
     floorCol = excel_col_to_index('C')
     homeCol = excel_col_to_index('D')
     timestampCol = excel_col_to_index('A')
-    padded_values.sort(key=lambda x: (x[blockCol], x[floorCol], x[homeCol], x[timestampCol]))
-    # padded_values.sort(key=lambda x: (x[blockCol], x[floorCol], x[homeCol], -int(x[timestampCol])))
+    padded_values.sort(key=lambda x: (createHomeID(x[blockCol], x[floorCol], x[homeCol]), -(string_to_timestamp(x[timestampCol], '%m/%d/%Y %H:%M:%S'))), reverse=False)
 
     # warning if dupplicate block, floor, home
     dupplicateRows = []
