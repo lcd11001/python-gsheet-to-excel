@@ -285,6 +285,23 @@ def merge_cells_if_same(sheet, start_row, end_row, col):
             merge_start = row + 1
 
 
+def adjust_column_widths(ws):
+    """
+    Adjust the column widths to fit the content.
+    """
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter  # Get the column name
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column].width = adjusted_width
+
+
 def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
     """
     Process Excel file and merging cells with the same value.
@@ -308,13 +325,15 @@ def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
             row += 1
         merge_end = row - 1
 
-        # Apply fill color to the group
+        # group post process
         stt_value = ws.cell(row=merge_start, column=1).value
         color_index = int(stt_value) % len(fill_colors)
         fill = PatternFill(start_color=fill_colors[color_index], end_color=fill_colors[color_index], fill_type="solid")
         for r in range(merge_start, merge_end + 1):
             for c in range(1, ws.max_column + 1):
+                # Apply fill color to the group
                 ws.cell(row=r, column=c).fill = fill
+                # Apply border to the group
                 ws.cell(row=r, column=c).border = thin_border
 
         if merge_start < merge_end:
@@ -323,6 +342,9 @@ def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
             for col_name in merge_col_names:
                 col_index = excel_col_to_index(col_name) + 1
                 merge_cells_if_same(ws, merge_start, merge_end, col_index)
+
+    # Adjust column widths to fit the content
+    adjust_column_widths(ws)
 
     # Save the workbook
     wb.save(output_path)
