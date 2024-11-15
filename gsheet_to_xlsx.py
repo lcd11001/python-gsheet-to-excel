@@ -15,7 +15,7 @@ YES = 'Có'
 NO = 'Không'
 OWNER = 'Chủ hộ'
 
-def string_to_timestamp(date_string, format='%Y-%m-%d %H:%M:%S'):
+def string_to_timestamp(date_string, format='%m/%d/%Y %H:%M:%S'):
     """
     Convert a string to a timestamp.
     
@@ -32,6 +32,14 @@ def normalize_full_name(text):
     Capitalize the first letter of a string.
     """
     return ' '.join(word.capitalize() for word in text.split())
+
+
+def normalize_date(text, inputFormat='%m/%d/%Y', outputFormat='%d/%m/%Y'):
+    """
+    Normalize a date string to the output format.
+    """
+    date = datetime.strptime(text, inputFormat)
+    return date.strftime(outputFormat)
 
 
 def excel_col_to_index(col_str):
@@ -72,7 +80,7 @@ def process_sheet_data(values, column_mapping):
     floorCol = excel_col_to_index('C')
     homeCol = excel_col_to_index('D')
     timestampCol = excel_col_to_index('A')
-    padded_values.sort(key=lambda x: (createHomeID(x[blockCol], x[floorCol], x[homeCol]), -(string_to_timestamp(x[timestampCol], '%m/%d/%Y %H:%M:%S'))), reverse=False)
+    padded_values.sort(key=lambda x: (createHomeID(x[blockCol], x[floorCol], x[homeCol]), -(string_to_timestamp(x[timestampCol]))), reverse=False)
 
     # warning if dupplicate block, floor, home
     dupplicateRows = []
@@ -127,6 +135,8 @@ def process_sheet_data(values, column_mapping):
             owner_info.append(OWNER)
             # capitalize the first letter of the full name
             owner_info[0] = normalize_full_name(owner_info[0])
+            # normalize the date format
+            owner_info[2] = normalize_date(owner_info[2])
             
 
             # G-Row ID
@@ -220,6 +230,8 @@ def process_member_data(row, member_mapping):
         member_data[-1], member_data[-2] = member_data[-2], member_data[-1]
         # capitalize the first letter of the full name
         member_data[0] = normalize_full_name(member_data[0])
+        # normalize the date format
+        member_data[2] = normalize_date(member_data[2])
         
         # Append the member info to the list
         member_info.append(member_data)
