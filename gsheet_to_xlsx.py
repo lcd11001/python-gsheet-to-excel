@@ -40,10 +40,43 @@ def process_sheet_data(values, column_mapping):
     
     # Pad all rows to have the same number of columns
     padded_values = []
-    for row in values[1:]:
+    for idx, row in enumerate(values[1:], start=1):
         padded_row = row + [''] * (max_cols - len(row)) if len(row) < max_cols else row
+        # append original row index into the last column
+        padded_row.append(idx)
         padded_values.append(padded_row)
 
+    # sort the rows by the block, floor, home accending and timestamp descending
+    blockCol = excel_col_to_index('B')
+    floorCol = excel_col_to_index('C')
+    homeCol = excel_col_to_index('D')
+    timestampCol = excel_col_to_index('A')
+    padded_values.sort(key=lambda x: (x[blockCol], x[floorCol], x[homeCol], x[timestampCol]))
+    # padded_values.sort(key=lambda x: (x[blockCol], x[floorCol], x[homeCol], -int(x[timestampCol])))
+
+    # warning if dupplicate block, floor, home
+    dupplicateRows = []
+    originalRow = -1
+    for i in range(1, len(padded_values)):
+        block = padded_values[i][blockCol]
+        floor = padded_values[i][floorCol]
+        home = padded_values[i][homeCol]
+        row = padded_values[i][-1]
+        if block == padded_values[i-1][blockCol] and floor == padded_values[i-1][floorCol] and home == padded_values[i-1][homeCol]:
+            # set original row
+            if  originalRow == -1:
+                originalRow = padded_values[i-1][-1]
+            print(f"* Warning: Dupplicate {createHomeID(block, floor, home)} at row {row + 1} vs original {originalRow + 1}")
+            dupplicateRows.append(i)
+        else:
+            # reset original row
+            originalRow = -1
+
+    # remove dupplicate rows
+    for i in range(len(dupplicateRows)-1, -1, -1):
+        padded_values.pop(dupplicateRows[i])
+
+    # Process each row into a DataFrame
     split_dfs = []
     additional_info_data = [''] * len(column_mapping['dest_additional_info_ids'])
 
@@ -55,11 +88,11 @@ def process_sheet_data(values, column_mapping):
                 col_idx = excel_col_to_index(col)
                 common_info.append(row[col_idx] if col_idx < len(row) else '')
 
-            # Merge floor and homeID into a single column
+            # Merge floor and home into a single column
             block = common_info[1]
             floor = common_info[2]
-            homeID = common_info[3]
-            common_info[2] = createHommID(block, floor, homeID)
+            home = common_info[3]
+            common_info[2] = createHomeID(block, floor, home)
             common_info.pop(3)
             
             # Replace the first element with the row index
@@ -118,22 +151,22 @@ def regex_extract_number(text):
     return '00'  # Return '00' if no number is found
 
 
-def createHommID(block, floor, homeID):
+def createHomeID(block, floor, home):
     """
-    Create a HomeID from the block, floor, and homeID
+    Create a HomeID from the block, floor, and home
     block = C1
     floor = Tầng 12
-    homeID = Căn hộ 07
+    home = Căn hộ 07
     HomeID = C1-1207
     """
 
-    # return f'{block}-{floor}-{homeID}'
+    # return f'{block}-{floor}-{home}'
 
     # floorNumber = floor.split(' ')[1]
-    # homeNumber = homeID.split(' ')[2]
+    # homeNumber = home.split(' ')[2]
     # return f'{block}-{floorNumber}{homeNumber}'
 
-    return f'{block}-{regex_extract_number(floor)}{regex_extract_number(homeID)}'
+    return f'{block}-{regex_extract_number(floor)}{regex_extract_number(home)}'
 
 
 def process_member_data(row, member_mapping):
@@ -312,7 +345,7 @@ def gsheet_to_xlsx(gsheet_path, output_path, column_mapping):
             if writer:
                 writer.close()
 
-        post_process_and_save_to_excel(output_path, ['A'])
+        post_process_and_save_to_excel(output_path, column_mapping['dest_merge_cells_ids'])
                 
     except Exception as e:
         print(f"* An error occurred: {str(e)}")
@@ -322,7 +355,7 @@ def gsheet_to_xlsx(gsheet_path, output_path, column_mapping):
 if __name__ == "__main__":
     column_mapping = {
         'src_common_info_id': ['A', 'B', 'C', 'D', 'E'],
-        'src_common_info_names': ['Timestamp', 'Block', 'Floor', 'HomeID', 'Owner'],
+        'src_common_info_names': ['Timestamp', 'Block', 'Floor', 'Home', 'Owner'],
         
         'src_owner_info_id': ['F', 'G', 'H', 'I'],
         'src_owner_info_names': ['Full Name', 'Sex', 'Birthday', 'Phone'],
@@ -340,7 +373,13 @@ if __name__ == "__main__":
         'dest_member_info_names': ['HỌ VÀ TÊN', 'GIỚI TÍNH', 'NGÀY/THÁNG/NĂM SINH', 'SĐT', 'QH VỚI CHỦ HỘ/NGƯỜI THUÊ'],
 
         'dest_additional_info_ids': ['J', 'K'],
-        'dest_additional_info_names': ['THÔNG TIN CHỦ CŨ', 'THÔNG TIN CHỦ HỘ']
+        'dest_additional_info_names': ['THÔNG TIN CHỦ CŨ', 'THÔNG TIN CHỦ HỘ'],
+
+        # 'dest_merge_cells_ids': ['A', 'B', 'C'],
+        # 'dest_merge_cells_names': ['STT', 'BLOCK', 'MÃ CĂN HỘ'],
+
+        'dest_merge_cells_ids': ['A'],
+        'dest_merge_cells_names': ['STT']
     }
 
     gsheet_to_xlsx("input.gsheet", "output.xlsx", column_mapping)
