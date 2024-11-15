@@ -13,6 +13,7 @@ from datetime import datetime
 #define a constant string
 YES = 'Có'
 NO = 'Không'
+OWNER = 'Chủ hộ'
 
 def string_to_timestamp(date_string, format='%Y-%m-%d %H:%M:%S'):
     """
@@ -24,6 +25,13 @@ def string_to_timestamp(date_string, format='%Y-%m-%d %H:%M:%S'):
     """
     date = datetime.strptime(date_string, format)
     return date.timestamp()
+
+
+def normalize_full_name(text):
+    """
+    Capitalize the first letter of a string.
+    """
+    return ' '.join(word.capitalize() for word in text.split())
 
 
 def excel_col_to_index(col_str):
@@ -116,7 +124,10 @@ def process_sheet_data(values, column_mapping):
                 col_idx = excel_col_to_index(col)
                 owner_info.append(row[col_idx] if col_idx < len(row) else '')
             # Append the last element with 'Owner'
-            owner_info.append('Owner')
+            owner_info.append(OWNER)
+            # capitalize the first letter of the full name
+            owner_info[0] = normalize_full_name(owner_info[0])
+            
 
             # G-Row ID
             additional_info_data[-1] = row[-1] + 1
@@ -207,6 +218,8 @@ def process_member_data(row, member_mapping):
         # swap the last two elements
         # because the last element is the phone number
         member_data[-1], member_data[-2] = member_data[-2], member_data[-1]
+        # capitalize the first letter of the full name
+        member_data[0] = normalize_full_name(member_data[0])
         
         # Append the member info to the list
         member_info.append(member_data)
