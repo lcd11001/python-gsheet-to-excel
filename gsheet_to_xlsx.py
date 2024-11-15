@@ -55,6 +55,8 @@ def process_sheet_data(values, column_mapping):
             for col in column_mapping['src_owner_info_id']:
                 col_idx = excel_col_to_index(col)
                 owner_info.append(row[col_idx] if col_idx < len(row) else '')
+            # Append the last element with 'Owner'
+            owner_info.append('Owner')
 
             # Create DataFrame for the row
             row_data = [common_info + owner_info]
@@ -189,13 +191,17 @@ if __name__ == "__main__":
     column_mapping = {
         'src_common_info_id': ['A', 'B', 'C', 'D', 'E'],
         'src_common_info_names': ['Timestamp', 'Block', 'Floor', 'HomeID', 'Owner'],
-        'src_owner_info_id': ['AC', 'AD', 'AE', 'AF'],  # Example with columns beyond Z
+        
+        'src_owner_info_id': ['F', 'G', 'H', 'I'],
         'src_owner_info_names': ['Full Name', 'Sex', 'Birthday', 'Phone'],
-        'src_common_info_id_to_dest_common_info_id': {'A': 'A', 'B': 'B', 'C': 'C', 'D': 'D', 'E': 'E'},
+        
+        'src_owner_info_next_id': 'J',
+        
         'dest_common_info_ids': ['A', 'B', 'C', 'D', 'E'],
         'dest_common_info_names': ['Counting', 'Block', 'Floor', 'HomeID', 'Owner'],
-        'dest_owner_info_ids': ['F', 'G', 'H', 'I'],
-        'dest_owner_info_names': ['Full Name', 'Sex', 'Birthday', 'Phone'],
+        
+        'dest_owner_info_ids': ['F', 'G', 'H', 'I', 'K'],
+        'dest_owner_info_names': ['Full Name', 'Sex', 'Birthday', 'Phone', 'Relationship'],
     }
 
     gsheet_to_xlsx("input.gsheet", "output.xlsx", column_mapping)
