@@ -284,7 +284,7 @@ def merge_cells_if_same(sheet, start_row, end_row, col):
             merge_start = row + 1
 
 
-def post_process_and_save_to_excel(output_path, col_names):
+def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
     """
     Process Excel file and merging cells with the same value.
     """
@@ -292,10 +292,22 @@ def post_process_and_save_to_excel(output_path, col_names):
     wb = openpyxl.load_workbook(output_path)
     ws = wb.active
 
-    # Merge cells in 1st column if they have the same value
-    for col_name in col_names:
-        col_index = excel_col_to_index(col_name) + 1
-        merge_cells_if_same(ws, 2, ws.max_row, col_index)
+    max_row = ws.max_row
+    group_by_col_index = excel_col_to_index(group_by_col) + 1
+
+    for row in range(2, max_row + 1):
+        group_by_value = ws.cell(row=row, column=group_by_col_index).value
+
+        merge_start = row
+        while row < max_row and ws.cell(row=row, column=group_by_col_index).value == group_by_value:
+            row += 1
+        merge_end = row - 1
+
+        if merge_start < merge_end:
+            # Merge cells in 1st column if they have the same value
+            for col_name in merge_col_names:
+                col_index = excel_col_to_index(col_name) + 1
+                merge_cells_if_same(ws, merge_start, merge_end, col_index)
 
     # Save the workbook
     wb.save(output_path)
@@ -385,7 +397,7 @@ def gsheet_to_xlsx(gsheet_path, output_path, column_mapping):
             if writer:
                 writer.close()
 
-        post_process_and_save_to_excel(output_path, column_mapping['dest_merge_cells_ids'])
+        post_process_and_save_to_excel(output_path, column_mapping['dest_merge_cells_ids'], column_mapping['dest_group_by_id']) 
                 
     except Exception as e:
         print(f"* An error occurred: {str(e)}")
@@ -415,11 +427,11 @@ if __name__ == "__main__":
         'dest_additional_info_ids': ['J', 'K', 'L'],
         'dest_additional_info_names': ['THÔNG TIN CHỦ CŨ', 'THÔNG TIN CHỦ HỘ', 'G-Row ID'],
 
-        # 'dest_merge_cells_ids': ['A', 'B', 'C'],
-        # 'dest_merge_cells_names': ['STT', 'BLOCK', 'MÃ CĂN HỘ'],
+        'dest_merge_cells_ids': ['A', 'B', 'C', 'D', 'J', 'K', 'L'],
+        'dest_merge_cells_names': ['STT', 'BLOCK', 'MÃ CĂN HỘ', 'CHÍNH CHỦ/THUÊ', 'THÔNG TIN CHỦ CŨ', 'THÔNG TIN CHỦ HỘ', 'G-Row ID'],
 
-        'dest_merge_cells_ids': ['A'],
-        'dest_merge_cells_names': ['STT']
+        'dest_group_by_id': 'C',
+        'dest_group_by_name': 'MÃ CĂN HỘ'
     }
 
     gsheet_to_xlsx("input.gsheet", "output.xlsx", column_mapping)
