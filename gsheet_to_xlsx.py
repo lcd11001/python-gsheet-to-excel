@@ -8,6 +8,7 @@ from googleapiclient.discovery import build
 import pandas as pd
 import pickle
 import openpyxl
+from openpyxl.styles import PatternFill
 from datetime import datetime
 
 #define a constant string
@@ -94,7 +95,7 @@ def process_sheet_data(values, column_mapping):
             # set original row
             if  originalRow == -1:
                 originalRow = padded_values[i-1][-1]
-            print(f"* Warning: Dupplicate {createHomeID(block, floor, home)} at row {row + 1} vs original {originalRow + 1}")
+            print(f"* Warning: Dupplicate {createHomeID(block, floor, home)} at row {row + 1} vs lastest {originalRow + 1}")
             dupplicateRows.append(i)
         else:
             # reset original row
@@ -295,6 +296,8 @@ def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
     max_row = ws.max_row
     group_by_col_index = excel_col_to_index(group_by_col) + 1
 
+    fill_colors = ['CCFFFF', 'FFFFFF']  # Light blue and white
+
     for row in range(2, max_row + 1):
         group_by_value = ws.cell(row=row, column=group_by_col_index).value
 
@@ -303,8 +306,16 @@ def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
             row += 1
         merge_end = row - 1
 
+        # Apply fill color to the group
+        stt_value = ws.cell(row=row, column=1).value
+        color_index = int(stt_value) % len(fill_colors)
+        fill = PatternFill(start_color=fill_colors[color_index], end_color=fill_colors[color_index], fill_type="solid")
+        for r in range(merge_start, merge_end + 1):
+            for c in range(1, ws.max_column + 1):
+                ws.cell(row=r, column=c).fill = fill
+
         if merge_start < merge_end:
-            # Merge cells in 1st column if they have the same value
+            # Merge cells in column if they have the same value
             for col_name in merge_col_names:
                 col_index = excel_col_to_index(col_name) + 1
                 merge_cells_if_same(ws, merge_start, merge_end, col_index)
