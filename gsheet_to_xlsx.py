@@ -430,6 +430,10 @@ def gsheet_to_xlsx(gsheet_path, output_path, column_mapping, sheet_indexes=[0]):
                     # Process the sheet data
                     final_df = process_sheet_data(values, column_mapping)
                     if final_df is None:
+                        # Create an empty DataFrame
+                        final_df = pd.DataFrame()
+                        final_df.to_excel(writer, sheet_name=sheet_name, index=False)
+                        sheets_processed += 1
                         print(f"* No valid data in sheet '{sheet_name}', skipping")
                         continue
                     
