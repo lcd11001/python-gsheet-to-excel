@@ -1,3 +1,4 @@
+import argparse
 import re
 import json
 import os
@@ -45,6 +46,15 @@ def normalize_date(text, inputFormat='%m/%d/%Y', outputFormat='%d/%m/%Y'):
     """
     date = datetime.strptime(text, inputFormat)
     return date.strftime(outputFormat)
+
+def normalize_phone_number(text):
+    """
+    Normalize a phone number from any text format to the output format 0xxx.xxx.xxx
+    """
+    digits = re.sub(r'\D', '', text)  # Remove all non-digit characters
+    if len(digits) == 10 and digits.startswith('0'):
+        return f'{digits[:4]}.{digits[4:7]}.{digits[7:]}'
+    return text  # Return the original text if it doesn't match the expected format
 
 
 def excel_col_to_index(col_str):
@@ -139,9 +149,11 @@ def process_sheet_data(values, column_mapping):
             # Append the last element with 'Owner'
             owner_info.append(normalize_capitalize(OWNER))
             # capitalize the first letter of the full name
-            owner_info[0] = normalize_capitalize(owner_info[0])
+            owner_info[column_mapping['normalize_name_idx']] = normalize_capitalize(owner_info[column_mapping['normalize_name_idx']])
             # normalize the date format
-            owner_info[2] = normalize_date(owner_info[2])
+            owner_info[column_mapping['normalize_birthday_idx']] = normalize_date(owner_info[column_mapping['normalize_birthday_idx']])
+            # normalize the phone number
+            owner_info[column_mapping['normalize_phone_idx']] = normalize_phone_number(owner_info[column_mapping['normalize_phone_idx']])
 
             # G-Row ID
             additional_info_data[-1] = row[-1] + 1
@@ -233,11 +245,13 @@ def process_member_data(row, member_mapping):
         # because the last element is the phone number
         member_data[-1], member_data[-2] = member_data[-2], member_data[-1]
         # capitalize the first letter of the full name
-        member_data[0] = normalize_capitalize(member_data[0])
+        member_data[column_mapping['normalize_name_idx']] = normalize_capitalize(member_data[column_mapping['normalize_name_idx']])
         # normalize the date format
-        member_data[2] = normalize_date(member_data[2])
+        member_data[column_mapping['normalize_birthday_idx']] = normalize_date(member_data[column_mapping['normalize_birthday_idx']])
         # normalize the relationship
-        member_data[4] = normalize_capitalize(member_data[4])
+        member_data[column_mapping['normalize_relationship_idx']] = normalize_capitalize(member_data[column_mapping['normalize_relationship_idx']])
+        # normalize the phone number
+        member_data[column_mapping['normalize_phone_idx']] = normalize_phone_number(member_data[column_mapping['normalize_phone_idx']])
 
         # Append the member info to the list
         member_info.append(member_data)
@@ -303,7 +317,7 @@ def adjust_column_widths(ws):
                     max_length = len(cell.value)
             except:
                 pass
-        adjusted_width = (max_length + 2)
+        adjusted_width = (max_length + 5)
         ws.column_dimensions[column].width = adjusted_width
 
 
@@ -355,7 +369,7 @@ def post_process_and_save_to_excel(output_path, merge_col_names, group_by_col):
     wb.save(output_path)
 
 
-def gsheet_to_xlsx(gsheet_path, output_path, column_mapping):
+def gsheet_to_xlsx(gsheet_path, output_path, column_mapping, sheet_indexes=[0]):
     """
     Convert a .gsheet file to .xlsx format, handling column mismatches
     """
@@ -383,7 +397,7 @@ def gsheet_to_xlsx(gsheet_path, output_path, column_mapping):
         
         # Filter for visible sheets
         visible_sheets = [sheet for sheet in sheets 
-                        if not sheet.get('properties', {}).get('hidden', False)]
+                        if not sheet.get('properties', {}).get('hidden', False) and sheet.get('properties', {}).get('index', 0) in sheet_indexes]
         
         if not visible_sheets:
             print("* Warning: All sheets are hidden. Attempting to use all sheets instead.")
@@ -451,30 +465,42 @@ if __name__ == "__main__":
         'src_common_info_id': ['A', 'B', 'C', 'D', 'E'],
         'src_common_info_names': ['Timestamp', 'Block', 'Floor', 'Home', 'Owner'],
         
-        'src_owner_info_id': ['F', 'G', 'H', 'I'],
-        'src_owner_info_names': ['Full Name', 'Sex', 'Birthday', 'Phone'],
+        'src_owner_info_id': ['F', 'G', 'H', 'I', 'J'],
+        'src_owner_info_names': ['Full Name', 'ID', 'Sex', 'Birthday', 'Phone'],
         
-        'src_owner_info_next_id': 'J',
+        'src_owner_info_next_id': 'K',
 
-        'src_member_info_id': ['K', 'L', 'M', 'N', 'O'],
-        'src_member_info_names': ['Full Name', 'Sex', 'Birthday', 'Relationship', 'Phone'],
-        'src_member_info_next_id': 'P',
+        'src_member_info_id': ['L', 'M', 'N', 'O', 'P', 'Q'],
+        'src_member_info_names': ['Full Name', 'ID', 'Sex', 'Birthday', 'Relationship', 'Phone'],
+        'src_member_info_next_id': 'R',
         
         'dest_common_info_ids': ['A', 'B', 'C', 'D'],
         'dest_common_info_names': ['STT', 'BLOCK', 'MÃ CĂN HỘ', 'CHÍNH CHỦ/THUÊ'],
         
-        'dest_member_info_ids': ['E', 'F', 'G', 'H', 'I'],
-        'dest_member_info_names': ['HỌ VÀ TÊN', 'GIỚI TÍNH', 'NGÀY/THÁNG/NĂM SINH', 'SĐT', 'QH VỚI CHỦ HỘ/NGƯỜI THUÊ'],
+        'dest_member_info_ids': ['E', 'F', 'G', 'H', 'I', 'J'],
+        'dest_member_info_names': ['HỌ VÀ TÊN', 'CCCD', 'GIỚI TÍNH', 'NGÀY/THÁNG/NĂM SINH', 'SĐT', 'QH VỚI CHỦ HỘ/NGƯỜI THUÊ'],
 
-        'dest_additional_info_ids': ['J', 'K', 'L'],
+        'dest_additional_info_ids': ['K', 'L', 'M'],
         'dest_additional_info_names': ['THÔNG TIN CHỦ CŨ', 'THÔNG TIN CHỦ HỘ', 'G-Row ID'],
 
-        'dest_merge_cells_ids': ['A', 'B', 'C', 'D', 'J', 'K', 'L'],
+        'dest_merge_cells_ids': ['A', 'B', 'C', 'D', 'K', 'L', 'M'],
         'dest_merge_cells_names': ['STT', 'BLOCK', 'MÃ CĂN HỘ', 'CHÍNH CHỦ/THUÊ', 'THÔNG TIN CHỦ CŨ', 'THÔNG TIN CHỦ HỘ', 'G-Row ID'],
 
         'dest_group_by_id': 'C',
-        'dest_group_by_name': 'MÃ CĂN HỘ'
+        'dest_group_by_name': 'MÃ CĂN HỘ',
+
+        'normalize_name_idx': 0,
+        'normalize_birthday_idx': 3,
+        'normalize_phone_idx': 4,
+        'normalize_relationship_idx': 5
     }
 
-    gsheet_to_xlsx("Khảo sát nhân khẩu KP 23 (Responses) (2).gsheet", "output.xlsx", column_mapping)
+    parser = argparse.ArgumentParser(description='Convert Google Sheets to XLSX.')
+    parser.add_argument('gsheet_path', type=str, help='Path to the Google Sheet file')
+    parser.add_argument('output_path', type=str, help='Path to the output XLSX file')
+    
+    args = parser.parse_args()
+    gsheet_to_xlsx(args.gsheet_path, args.output_path, column_mapping)
+
+    # gsheet_to_xlsx("Khảo sát nhân khẩu KP 23 (Responses) (2).gsheet", "output.xlsx", column_mapping)
 
