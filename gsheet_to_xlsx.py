@@ -257,7 +257,7 @@ def process_member_data(row, member_mapping):
         member_info.append(member_data)
         
         # Check if there are more members
-        if (member_info_next_col + col_offset) >= len(row) or row[member_info_next_col + col_offset] == NO:
+        if (member_info_next_col + col_offset) >= len(row) - 1 or row[member_info_next_col + col_offset] == NO:
             break
 
         # Move to the next member
@@ -506,5 +506,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     gsheet_to_xlsx(args.gsheet_path, args.output_path, column_mapping)
 
-    # gsheet_to_xlsx("Khảo sát nhân khẩu KP 23 (Responses) (2).gsheet", "output.xlsx", column_mapping)
+    # gsheet_to_xlsx("Khảo sát nhân khẩu KP 23 CCCD.gsheet", "output.xlsx", column_mapping)
 
